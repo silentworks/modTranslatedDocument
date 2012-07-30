@@ -25,47 +25,44 @@ require_once dirname(dirname(dirname(__FILE__))).'/processors/mgr/resource/updat
 
 class modTranslatedDocument extends modResource {
 
-public $showInContextMenu = true;
+	public $showInContextMenu = true;
 
-function __construct(xPDO & $xpdo) {
-		global $modx;
+	public function __construct(xPDO & $xpdo) {
         parent :: __construct($xpdo);
         $this->set('class_key','modTranslatedDocument');
 		
-	
-		$language = $modx->getOption('cultureKey');
-		$this->language = $modx->getOption('cultureKey');
+		$language = $xpdo->getOption('cultureKey');
+		$this->language = $xpdo->getOption('cultureKey');
 		$this->_cacheKey = '[contextKey]/resources/'.$language.'/[id]';
 		
 		$this->_pagetitle = "arse";
-				
     }
 	
-// Return the path to controllers --------------------------------------------------------------------------------------------------------------------
-public static function getControllerPath(xPDO &$modx) {
-		return $modx->getOption('core_path').'components/translations/controllers/mgr/';
-	}//
+	// Return the path to controllers --------------------------------------------------------------------------------------------------------------------
+	public static function getControllerPath(xPDO &$modx) {
+		return $modx->getOption('translations.core_path', null, $modx->getOption('core_path').'components/translations/').'controllers/mgr/';
+	}
 	
 
-// Return text to use in manager context create menus ------------------------------------------------------------------------------------------------
-public function getContextMenuText() {
+	// Return text to use in manager context create menus ------------------------------------------------------------------------------------------------
+	public function getContextMenuText() {
 		$this->xpdo->lexicon->load('translations:default');
 		return array(
 			'text_create' => $this->xpdo->lexicon('translations.document'),
 			'text_create_here' => $this->xpdo->lexicon('translations.createDocumentHere'),
 		);
-	}//	
+	}
 
 
-// Return the name of this resource type --------------------------------------------------------------------------------------------------------------
-public function getResourceTypeName() {
+	// Return the name of this resource type --------------------------------------------------------------------------------------------------------------
+	public function getResourceTypeName() {
 		$this->xpdo->lexicon->load('translations:default');
 		return $this->xpdo->lexicon('translations.document');
-	}//
+	}
 	
 	
-// Return the content for this article -----------------------------------------------------------------------------------------------------------------
-public function getContent(array $options = array()) {
+	// Return the content for this article -----------------------------------------------------------------------------------------------------------------
+	public function getContent(array $options = array()) {
 		$content = parent::getContent($options);
 		$language = $this->getLanguage();
 		$year = date('Y');
@@ -75,39 +72,34 @@ public function getContent(array $options = array()) {
 		};
 		
 		return $content;
-	}//
+	}
 	
 	
-// Process a resource, transforming source content to output. -------------------------------------------------------------------------------------------
- public function process(){ 
+	// Process a resource, transforming source content to output. -------------------------------------------------------------------------------------------
+ 	public function process() { 
 		switch($this->getLanguage()){
 		//	case 'fr'	: $this->pagetitle = 'La title francais!';
 		};
 	
 		return parent::process();
-}//
+	}
 
 
-// Override get for translations -----------------------------------
- public function get( $key ){
-	 global $modx;
-	 $orig = parent::get($key);
-	 
-	 $translated = array('pagetitle','longtitle','description','introtext','menutitle','content');
-	 
-	 if(in_array($key,$translated)){
+	// Override get for translations -----------------------------------
+	public function get( $key ) {
+		$orig = parent::get($key);
+		$translated = array('pagetitle','longtitle','description','introtext','menutitle','content');
+
+		if(in_array($key,$translated)){
 		 $value = $this->lookForTranslations($key);  
 		 if(!$value){$value = parent::get($key);};
-	 } else {
-	  	$value = parent::get($key);
-	 };
-	 
-	 return $value;
- }//
-	
-	
-	
-	
+		} else {
+			$value = parent::get($key);
+		};
+
+		return $value;
+	}
+
     /**
      * Use this in your extended Resource class to modify the tree node contents
      * @param array $node
@@ -117,20 +109,15 @@ public function getContent(array $options = array()) {
         return $node;
     }
 
-//=======================================================================================================================================================
-//=======================================================================================================================================================
-	
-private function lookForTranslations($field){
-		global $modx;
+	private function lookForTranslations($field){
+		$language = $this->xpdo->getOption('cultureKey');
 		
-		$language = $modx->getOption('cultureKey');
-		
-		$query = $modx->newQuery('Translation');
+		$query = $this->xpdo->newQuery('Translation');
 		$query->where(array(
 			'articleID' => $this->get('id'),
 			'language' => $language
 		));
-		$translations = $modx->getCollection('Translation',$query);
+		$translations = $this->xpdo->getCollection('Translation',$query);
 		$value = '';
 		
 		foreach($translations as $T){
@@ -139,31 +126,25 @@ private function lookForTranslations($field){
 		};
 		return false;
 
-	}//
+	}
 	
-	
-public function getTranslationsJSON(){
-	global $modx;
+	public function getTranslationsJSON(){
 		$JSON = array();
-		$query = $modx->newQuery('Translation');
+		$query = $this->xpdo->newQuery('Translation');
 		$query->where(array(
 			'articleID' => $this->get('id'),
 		));
-		$translations = $modx->getCollection('Translation',$query);
+		$translations = $this->xpdo->getCollection('Translation',$query);
 		foreach($translations as $T){
 			$row = $T->toArray();
 			$JSON[$row['language']] = $row;
 		};
 		
 		return json_encode($JSON);
-	
-}//
+	}
 
 
-private function getLanguage(){
-		global $modx;
-		return $modx->getOption('cultureKey');
-	}//
-
-
-};// end class modTranslatedDocument
+	private function getLanguage(){
+		return $this->xpdo->getOption('cultureKey');
+	}
+}
